@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AVL vs Rubro-Negra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* paleta e tipografia do brandbook da Tess */
+  :root {
+    --bg: #F3F3F3;
+    --ink: #1A1A1A;
+    --muted: #697F81;
+    --line: rgba(0,0,0,.08);
+    --teal: #0F4C5C;
+    --avl: #0F4C5C;
+    --rb: #C8323A;
+    --surface: #FFFFFF;
+    --ok: #15803D;
+    --node-stroke: #0F4C5C;
+  }
+  @page { size: 1280px 720px; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #cfd4d6; color: var(--ink); font-family: Inter, system-ui, sans-serif; }
+  .slide {
+    width: 1280px; height: 720px; margin: 24px auto; background: var(--bg); color: var(--ink);
+    position: relative; overflow: hidden; padding: 72px 80px 56px;
+    display: flex; flex-direction: column; break-after: page; page-break-after: always;
+    box-shadow: 0 4px 20px rgba(0,0,0,.15);
+  }
+  @media print {
+    html, body { background: #fff; }
+    .slide { margin: 0; box-shadow: none; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+  .slide.dark { background: #1A1A1A; color: #fff; --muted: rgba(255,255,255,.55); --line: rgba(255,255,255,.15);
+                --surface: #1E1E1E; --avl: #89C2C9; --rb: #FF7B7B; }
+  .slide.teal { background: linear-gradient(160deg, #587678 0%, #354E51 100%); color: #fff;
+                --muted: rgba(255,255,255,.6); --line: rgba(255,255,255,.2); --surface: rgba(255,255,255,.1);
+                --avl: #D4ECEF; --rb: #FFB3B3; }
+  /* círculo com seta no canto superior direito, como nos slides da Tess */
+  .slide::after {
+    content: "→"; position: absolute; top: 40px; right: 44px; width: 44px; height: 44px; border-radius: 50%;
+    border: 1.5px solid currentColor; opacity: .45; display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  .slide.last::after { content: "↙"; }
+  .num { position: absolute; right: 48px; bottom: 26px; font-size: 14px; color: var(--muted); }
+  .kicker { font-size: 15px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .kicker::before { content: "— "; }
+  h1 { font-size: 46px; line-height: 1.1; margin: 0 0 28px; font-weight: 800; letter-spacing: -.01em; }
+  h1 em { font-style: normal; color: var(--teal); }
+  .dark h1 em, .teal h1 em { color: rgba(255,255,255,.55); }
+  h2 { font-size: 22px; margin: 0 0 10px; font-weight: 700; }
+  p, li { font-size: 22px; line-height: 1.45; }
+  ul { margin: 0; padding-left: 26px; }
+  li { margin-bottom: 10px; }
+  .muted { color: var(--muted); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; flex: 1; min-height: 0; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .card { background: var(--surface); border-radius: 24px; padding: 24px 28px; align-self: start;
+          box-shadow: 0 8px 40px rgba(0,0,0,.08); }
+  .teal .card, .dark .card { box-shadow: none; border: 1px solid var(--line); }
+  .card p, .card li { font-size: 19px; }
+  .avl { color: var(--avl); } .rb { color: var(--rb); }
+  code, pre { font-family: "JetBrains Mono", monospace; }
+  pre.term {
+    background: #1E1E1E; color: #ECECEC; border-radius: 20px; padding: 20px 24px; margin: 0;
+    font-size: 15px; line-height: 1.45; overflow: hidden; white-space: pre; border: 1px solid rgba(255,255,255,.12);
+  }
+  pre.term .r { color: #FF7B7B; font-weight: 600; }
+  pre.term .ok { color: #4ADE80; } pre.term .no { color: #F5C26B; } pre.term .p { color: #89A0A3; }
+  table { border-collapse: collapse; width: 100%; font-size: 18px; }
+  th, td { padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; }
+  th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+  th { font-size: 14px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  td.hl { font-weight: 800; }
+  td:nth-child(2) { white-space: nowrap; }
+  .tag { display: inline-block; font-size: 15px; font-weight: 600; padding: 3px 12px; border-radius: 999px; background: #DCFCE7; color: var(--ok); }
+  .cover { justify-content: center; }
+  .cover h1 { font-size: 64px; font-weight: 900; }
+  .pill { display: inline-block; border: 1.5px solid rgba(255,255,255,.4); border-radius: 999px; padding: 12px 28px;
+          font-size: 18px; color: rgba(255,255,255,.85); letter-spacing: .02em; }
+  .last .pill { border-color: rgba(0,0,0,.2); color: var(--ink); }
+  svg text { font-family: Inter, sans-serif; }
+  .caption { font-size: 16px; color: var(--muted); text-align: center; margin-top: 6px; }
+  .arrow { font-size: 40px; color: var(--muted); align-self: center; text-align: center; min-width: 120px; }
+</style>
+</head>
+<body>
+
+<!-- 1. Capa -->
+<section class="slide dark cover">
+  <div class="kicker">IMD0039 · Estruturas de Dados Básicas II</div>
+  <h1>Balanceamento em escala:<br><em>AVL vs Rubro-Negra na<br>logística da Black Friday</em></h1>
+  <p class="muted">Leonardo Guimarães Castro · outubro de 2026</p>
+  <div style="margin-top:18px"><span class="pill">github.com/leo-lgc/avl-rubro-negra-black-friday</span></div>
+</section>
+
+<!-- 2. A proposta -->
+<section class="slide">
+  <div class="kicker">1 · A proposta</div>
+  <h1><em>Milhões</em> de encomendas, três operações</h1>
+  <div class="grid2">
+    <div>
+      <ul>
+        <li>Na Black Friday, o centro de distribuição <b>registra</b>, <b>localiza</b> e <b>remove</b> IDs de encomendas sem parar.</li>
+        <li>Os IDs chegam quase sempre <b>em ordem</b> (são sequenciais), o pior caso para uma árvore de busca comum.</li>
+        <li>Objetivo: garantir <b>O(log n)</b> por operação mesmo no pico, e escolher entre AVL e Rubro-Negra com base em medições.</li>
+      </ul>
+    </div>
+    <div class="grid3" style="grid-template-columns:1fr; gap:16px">
+      <div class="card"><h2>Registrar</h2><p>inserção do ID quando a encomenda entra no sistema</p></div>
+      <div class="card"><h2>Localizar</h2><p>busca do ID no rastreamento e na separação</p></div>
+      <div class="card"><h2>Remover</h2><p>remoção do ID quando a encomenda é despachada</p></div>
+    </div>
+  </div>
+  <div class="num">2</div>
+</section>
+
+<!-- 3. O desafio técnico -->
+<section class="slide dark">
+  <div class="kicker">2 · O desafio técnico</div>
+  <h1>Sem balanceamento, <em>a árvore vira uma lista</em></h1>
+  <div class="grid2">
+    <div>
+      <ul>
+        <li>Numa árvore de busca binária comum, inserir 1, 2, 3, … põe cada nó à direita do anterior.</li>
+        <li>A altura fica igual a <b>n</b>: buscar o último ID custa <b>n comparações</b>.</li>
+        <li>Com 10.000 IDs: até <b>10.000</b> comparações por busca. Balanceada: cerca de <b>14</b>.</li>
+        <li>Árvores balanceadas fazem pequenos ajustes a cada inserção ou remoção para manter a altura em O(log n).</li>
+      </ul>
+    </div>
+    <div style="display:flex; flex-direction:column; justify-content:center">
+      <svg id="degenerate" viewBox="0 0 520 400" width="100%"></svg>
+      <div class="caption">IDs 1 a 5 inseridos em ordem numa árvore sem balanceamento: altura 5</div>
+    </div>
+  </div>
+  <div class="num">3</div>
+</section>
+
+<!-- 4. A solução -->
+<section class="slide">
+  <div class="kicker">3 · A solução desenvolvida</div>
+  <h1>Um protótipo, duas árvores, <em>a mesma interface</em></h1>
+  <div class="grid2">
+    <div>
+      <p style="margin-top:0">Python 3, sem bibliotecas externas. Ao iniciar, o usuário escolhe <b class="avl">AVL</b> ou <b class="rb">Rubro-Negra</b>. Menu:</p>
+      <ul style="font-size:20px">
+        <li>inserir, remover e buscar ID</li>
+        <li>percurso em ordem (IDs em ordem crescente)</li>
+        <li>visualização: fator de balanceamento (AVL) ou cor do nó (RB)</li>
+        <li>inserção em lote e estatísticas (altura, rotações, recolorações)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Decisões de projeto</h2>
+      <ul>
+        <li><b>ID repetido:</b> recusado com aviso (ID de encomenda é único).</li>
+        <li><b>ID inexistente</b> na busca ou remoção: "não encontrado", árvore intacta.</li>
+        <li><b>Árvore vazia:</b> todas as operações funcionam.</li>
+        <li><b>Nó com dois filhos:</b> trocado pelo sucessor em ordem.</li>
+        <li><b>Entrada inválida:</b> erro, e o programa continua.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="num">4</div>
+</section>
+
+<!-- 5. AVL estratégia -->
+<section class="slide teal">
+  <div class="kicker">4 · Árvore AVL</div>
+  <h1>AVL: <em>balanceamento rígido pela altura</em></h1>
+  <div class="grid2">
+    <div>
+      <ul>
+        <li>Cada nó guarda sua altura. <b>Fator de balanceamento</b> = altura(esq) − altura(dir).</li>
+        <li>Regra: o fator de todo nó fica em <b>{−1, 0, +1}</b>.</li>
+        <li>Depois de inserir ou remover, o caminho até a raiz é revisto. Se algum nó chegar a ±2, uma rotação corrige.</li>
+        <li>Altura máxima ≈ <b>1,44 · log₂ n</b>.</li>
+      </ul>
+    </div>
+    <div class="grid3" style="grid-template-columns:1fr 1fr; gap:16px; align-content:start">
+      <div class="card"><h2>LL</h2><p>pesado à esquerda, na esquerda: rotação à direita</p></div>
+      <div class="card"><h2>RR</h2><p>pesado à direita, na direita: rotação à esquerda</p></div>
+      <div class="card"><h2>LR</h2><p>esquerda, depois direita: rotação dupla</p></div>
+      <div class="card"><h2>RL</h2><p>direita, depois esquerda: rotação dupla</p></div>
+    </div>
+  </div>
+  <div class="num">5</div>
+</section>
+
+<!-- 6. AVL exemplo -->
+<section class="slide">
+  <div class="kicker">4 · Árvore AVL</div>
+  <h1>Exemplo: <em>inserir 10, 20, 30</em> (caso RR)</h1>
+  <div style="display:flex; gap:24px; flex:1; align-items:center; justify-content:center">
+    <div><svg id="avl-before" viewBox="0 0 360 340" width="400"></svg><div class="caption">Antes: o nó 10 fica com fator −2</div></div>
+    <div class="arrow">→<div style="font-size:16px">rotação à<br>esquerda em 10</div></div>
+    <div><svg id="avl-after" viewBox="0 0 360 340" width="400"></svg><div class="caption">Depois: 20 vira a raiz, todos com fator 0</div></div>
+  </div>
+  <p class="muted" style="font-size:18px; margin:0">Teste <code>test_rotation_example</code>: após 10, 20, 30, a raiz é 20 e o contador marca 1 rotação.</p>
+  <div class="num">6</div>
+</section>
+
+<!-- 7. RB propriedades -->
+<section class="slide teal">
+  <div class="kicker">5 · Árvore Rubro-Negra</div>
+  <h1>Rubro-Negra: <em>balanceamento pelas cores</em></h1>
+  <div class="grid2">
+    <div>
+      <h2>As cinco propriedades</h2>
+      <ol style="padding-left:26px; margin:0">
+        <li>Todo nó é <b class="rb">vermelho</b> ou <b>preto</b>.</li>
+        <li>A raiz é preta.</li>
+        <li>As folhas NIL são pretas.</li>
+        <li>Um nó vermelho só tem filhos pretos.</li>
+        <li>Todo caminho de um nó até as folhas tem o mesmo número de nós pretos.</li>
+      </ol>
+    </div>
+    <div>
+      <ul>
+        <li>Juntas, as regras garantem que o caminho mais longo tem no máximo o dobro do mais curto: altura ≤ <b>2 · log₂(n+1)</b>.</li>
+        <li>O nó novo entra vermelho. Se o pai também for vermelho, a correção depende do <b>tio</b>:
+          <br>tio vermelho → só recolorir;
+          <br>tio preto → 1 ou 2 rotações.</li>
+        <li>No máximo <b>2 rotações</b> por inserção e <b>3</b> por remoção.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="num">7</div>
+</section>
+
+<!-- 8. RB exemplo -->
+<section class="slide">
+  <div class="kicker">5 · Árvore Rubro-Negra</div>
+  <h1>Exemplo: <em>inserir 10, 20, 30</em> e depois 15</h1>
+  <div style="display:flex; gap:10px; flex:1; align-items:center; justify-content:center">
+    <div><svg id="rb-1" viewBox="0 0 360 340" width="300"></svg><div class="caption">30 entra vermelho sob 20 vermelho; tio NIL é preto</div></div>
+    <div class="arrow">→<div style="font-size:15px">rotação<br>+ recolorir</div></div>
+    <div><svg id="rb-2" viewBox="0 0 360 340" width="300"></svg><div class="caption">20 sobe e fica preto</div></div>
+    <div class="arrow">→<div style="font-size:15px">+15: o tio (30)<br>é vermelho</div></div>
+    <div><svg id="rb-3" viewBox="0 0 360 340" width="300"></svg><div class="caption">só recoloração, sem rotação</div></div>
+  </div>
+  <div class="num">8</div>
+</section>
+
+<!-- 9. Demo AVL -->
+<section class="slide dark">
+  <div class="kicker">6 · Demonstração</div>
+  <h1>Execução na <em>AVL</em></h1>
+  <div class="grid2" style="gap:28px">
+<pre class="term"><span class="p">$ python3 main.py</span>
+Escolha a árvore: [1] AVL  [2] Rubro-Negra > 1
+> 6
+IDs: 10 20 30 15 25 5
+  6 inseridos, 0 duplicatas ignoradas
+> 1
+ID a inserir: 20
+  <span class="no">✗ ID 20 já existe (duplicata ignorada).</span>
+> 3
+ID a buscar: 25
+  <span class="ok">✓ ID 25 encontrado.</span>
+> 3
+ID a buscar: 99
+  <span class="no">✗ ID 99 não encontrado.</span>
+> 2
+ID a remover: 20
+  <span class="ok">✓ removido.</span>
+> 2
+ID a remover: 99
+  <span class="no">✗ ID 99 não encontrado.</span></pre>
+<pre class="term"><span class="p">> 5   (antes de remover 20)</span>
+┌── 30 [fb=+1]
+│   └── 25 [fb=+0]
+20 [fb=+0]  (raiz)
+│   ┌── 15 [fb=+0]
+└── 10 [fb=+0]
+    └── 5 [fb=+0]
+
+<span class="p">> 5   (depois de remover 20)</span>
+┌── 30 [fb=+0]
+25 [fb=+1]  (raiz)
+│   ┌── 15 [fb=+0]
+└── 10 [fb=+0]
+    └── 5 [fb=+0]
+
+<span class="p">> 4</span>
+  5 10 15 25 30
+<span class="p">> 7</span>
+  Altura: 3   Rotacoes: 1</pre>
+  </div>
+  <div class="num">9</div>
+</section>
+
+<!-- 10. Demo RB -->
+<section class="slide dark">
+  <div class="kicker">6 · Demonstração</div>
+  <h1>Execução na Rubro-Negra <em>(cores visíveis)</em></h1>
+  <div class="grid2" style="gap:28px">
+<pre class="term"><span class="p">$ python3 main.py</span>
+Escolha a árvore: [1] AVL  [2] Rubro-Negra > 2
+> 6
+IDs: 10 20 30 15 25 5
+  6 inseridos, 0 duplicatas ignoradas
+> 1
+ID a inserir: 20
+  <span class="no">✗ ID 20 já existe (duplicata ignorada).</span>
+> 3
+ID a buscar: 25
+  <span class="ok">✓ ID 25 encontrado.</span>
+> 3
+ID a buscar: 99
+  <span class="no">✗ ID 99 não encontrado.</span>
+> 2
+ID a remover: 20
+  <span class="ok">✓ removido.</span>
+> 2
+ID a remover: 99
+  <span class="no">✗ ID 99 não encontrado.</span></pre>
+<pre class="term"><span class="p">> 5   (antes de remover 20)</span>
+┌── 30(P)
+│   └── <span class="r">25(V)</span>
+20(P)  (raiz)
+│   ┌── <span class="r">15(V)</span>
+└── 10(P)
+    └── <span class="r">5(V)</span>
+
+<span class="p">> 5   (depois de remover 20)</span>
+┌── 30(P)
+25(P)  (raiz)
+│   ┌── <span class="r">15(V)</span>
+└── 10(P)
+    └── <span class="r">5(V)</span>
+
+<span class="p">> 7</span>
+  Altura: 3  Rotacoes: 1  Recoloracoes: 7
+  Altura negra: 2</pre>
+  </div>
+  <div class="num">10</div>
+</section>
+
+<!-- 11. Testes -->
+<section class="slide">
+  <div class="kicker">7 · Testes realizados</div>
+  <h1><em>20 testes</em> automáticos, todos aprovados</h1>
+  <div class="grid2">
+    <div>
+      <p style="margin-top:0">Os <b>mesmos testes</b> rodam nas duas árvores (<code>test_trees.py</code>). Após as operações, <code>check()</code> confere as propriedades:</p>
+      <ul style="font-size:19px">
+        <li><b class="avl">AVL:</b> ordem de busca, alturas guardadas, fator em {−1, 0, +1}</li>
+        <li><b class="rb">RB:</b> ordem de busca, raiz preta, sem vermelho-vermelho, mesma altura negra em todos os caminhos</li>
+      </ul>
+      <pre class="term" style="margin-top:18px; font-size:15px"><span class="p">$ python3 -m unittest test_trees.py</span>
+....................
+Ran 20 tests in 0.796s
+<span class="ok">OK</span></pre>
+    </div>
+    <table style="font-size:17px">
+      <tr><th>Cenário</th><th></th><th>AVL</th><th>RB</th></tr>
+      <tr><td>Inserção crescente, decrescente e aleatória (1.000 IDs, check a cada passo)</td><td></td><td><span class="tag">ok</span></td><td><span class="tag">ok</span></td></tr>
+      <tr><td>Busca de IDs existentes e inexistentes</td><td></td><td><span class="tag">ok</span></td><td><span class="tag">ok</span></td></tr>
+      <tr><td>Remoção de folha, nó com 1 filho e nó com 2 filhos</td><td></td><td><span class="tag">ok</span></td><td><span class="tag">ok</span></td></tr>
+      <tr><td>Remoção de ID inexistente</td><td></td><td><span class="tag">ok</span></td><td><span class="tag">ok</span></td></tr>
+      <tr><td>Árvore vazia e com um elemento</td><td></td><td><span class="tag">ok</span></td><td><span class="tag">ok</span></td></tr>
+      <tr><td>Duplicata recusada</td><td></td><td><span class="tag">ok</span></td><td><span class="tag">ok</span></td></tr>
+      <tr><td>Esvaziar a árvore inteira com check</td><td></td><td><span class="tag">ok</span></td><td><span class="tag">ok</span></td></tr>
+      <tr><td>5.000 operações aleatórias contra um conjunto de referência</td><td></td><td><span class="tag">ok</span></td><td><span class="tag">ok</span></td></tr>
+    </table>
+  </div>
+  <div class="num">11</div>
+</section>
+
+<!-- 12. Metodologia + tabela -->
+<section class="slide">
+  <div class="kicker">8 · Análise comparativa</div>
+  <h1>Mesmos dados, <em>mesmas operações</em></h1>
+  <p style="margin-top:0" class="muted">10.000 IDs inseridos em 3 ordens; depois, metade removida (uma chave sim, uma não). <code>python3 benchmark.py</code></p>
+  <table>
+    <tr><th>Ordem</th><th>Árvore</th><th>Altura após inserir</th><th>Rotações ao inserir</th><th>Recolorações</th><th>Altura após remover</th><th>Rotações no total</th></tr>
+    <tr><td>Crescente</td><td class="avl">AVL</td><td class="hl">14</td><td>9.986</td><td>—</td><td>13</td><td>9.991</td></tr>
+    <tr><td></td><td class="rb">Rubro-Negra</td><td class="hl">24</td><td>9.976</td><td>49.877</td><td>13</td><td>9.987</td></tr>
+    <tr><td>Decrescente</td><td class="avl">AVL</td><td class="hl">14</td><td>9.986</td><td>—</td><td>13</td><td>9.991</td></tr>
+    <tr><td></td><td class="rb">Rubro-Negra</td><td class="hl">24</td><td>9.976</td><td>49.877</td><td>13</td><td>9.987</td></tr>
+    <tr><td>Aleatória</td><td class="avl">AVL</td><td class="hl">16</td><td>6.946</td><td>—</td><td>15</td><td class="hl">8.938</td></tr>
+    <tr><td></td><td class="rb">Rubro-Negra</td><td class="hl">16</td><td>5.806</td><td>23.230</td><td>15</td><td class="hl">7.806</td></tr>
+  </table>
+  <p class="muted" style="font-size:17px">Rotação dupla conta como 2. Uma BST comum teria altura 10.000 nas ordens crescente e decrescente.</p>
+  <div class="num">12</div>
+</section>
+
+<!-- 13. Alturas -->
+<section class="slide">
+  <div class="kicker">8 · Análise comparativa</div>
+  <h1>Altura: <em>a AVL é mais baixa</em> com IDs em ordem</h1>
+  <div class="grid2" style="grid-template-columns:1.3fr 1fr">
+    <div><svg id="chart-h" viewBox="0 0 640 420" width="100%"></svg></div>
+    <div>
+      <ul>
+        <li>Com entrada <b>ordenada</b> (o caso dos IDs sequenciais), a RB fica <b>71% mais alta</b>: 24 contra 14.</li>
+        <li>Ambas ficam dentro do limite teórico (log₂ 10.000 ≈ 13,3):<br>AVL ≤ 1,44·log n ≈ 19<br>RB ≤ 2·log n ≈ 27</li>
+        <li>Com entrada <b>aleatória</b> e após as remoções, as alturas empatam.</li>
+        <li>Altura maior = mais comparações por busca no pior caso.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="num">13</div>
+</section>
+
+<!-- 14. Rotações -->
+<section class="slide">
+  <div class="kicker">8 · Análise comparativa</div>
+  <h1>Rotações: <em>a RB ajusta menos</em> a estrutura</h1>
+  <div class="grid2" style="grid-template-columns:1.3fr 1fr">
+    <div><svg id="chart-r" viewBox="0 0 640 420" width="100%"></svg></div>
+    <div>
+      <ul>
+        <li>Com dados aleatórios, a RB fez <b>16% menos rotações</b> na inserção e <b>13% menos</b> no total.</li>
+        <li>Com dados ordenados, as duas giram praticamente uma vez por inserção.</li>
+        <li>A RB troca rotações por <b>recolorações</b> (23 mil a 50 mil), que só mudam um campo do nó e não mexem em ponteiros.</li>
+        <li>Nas remoções medidas, as duas giraram quase o mesmo (≈2.000 rotações cada). A diferença está no pior caso: a AVL pode girar em vários níveis numa remoção; a RB faz no máximo 3.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="num">14</div>
+</section>
+
+<!-- 15. Vantagens e limitações -->
+<section class="slide">
+  <div class="kicker">8 · Análise comparativa</div>
+  <h1>Vantagens, limitações <em>e aplicações</em></h1>
+  <div class="grid2">
+    <div class="card" style="border-top:6px solid #0F4C5C">
+      <h2 class="avl">AVL</h2>
+      <ul>
+        <li><b>+</b> árvore mais baixa: buscas mais rápidas no pior caso</li>
+        <li><b>+</b> altura previsível, ≤ 1,44·log n</li>
+        <li><b>−</b> mais rotações: +20% na inserção com dados aleatórios</li>
+        <li><b>−</b> guarda a altura em cada nó</li>
+        <li><b>Uso:</b> índices de leitura intensa, bancos em memória, dicionários consultados muito e alterados pouco</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:6px solid #C8323A">
+      <h2 class="rb">Rubro-Negra</h2>
+      <ul>
+        <li><b>+</b> atualização mais barata: ≤ 2 rotações na inserção, ≤ 3 na remoção</li>
+        <li><b>+</b> custo por operação mais estável</li>
+        <li><b>−</b> até 2·log n de altura: buscas um pouco mais longas</li>
+        <li><b>−</b> remoção com mais casos para implementar</li>
+        <li><b>Uso:</b> <code>std::map</code> (C++), <code>TreeMap</code> (Java), escalonador CFS do Linux</li>
+      </ul>
+    </div>
+  </div>
+  <div class="num">15</div>
+</section>
+
+<!-- 16. Recomendação -->
+<section class="slide teal">
+  <div class="kicker">9 · Recomendação técnica</div>
+  <h1>Recomendação: <em>Rubro-Negra no fluxo principal</em></h1>
+  <div class="grid2">
+    <div>
+      <ul>
+        <li>Na Black Friday, cada encomenda é <b>inserida e removida</b>: o sistema é de escrita intensa.</li>
+        <li>A RB fez <b>13% menos rotações</b> no total com dados aleatórios, e a teoria limita cada correção a ≤ 3 rotações, sem picos de custo numa única operação.</li>
+        <li>A altura extra (24 contra 14 com IDs ordenados) custa cerca de 10 comparações a mais por busca: aceitável dentro do O(log n).</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Quando escolher AVL</h2>
+      <p>Para o serviço de <b>rastreamento</b>, onde o cliente consulta muitas vezes e o índice muda pouco, a AVL é melhor: árvore 42% mais baixa com IDs sequenciais.</p>
+      <h2 style="margin-top:20px">Ressalva</h2>
+      <p>Os tempos medidos em Python dependem da implementação (a AVL é recursiva, a RB iterativa). A recomendação se apoia nas contagens de altura e rotação, que não dependem da linguagem.</p>
+    </div>
+  </div>
+  <div class="num">16</div>
+</section>
+
+<!-- 17. Referências -->
+<section class="slide last">
+  <div class="kicker">10 · Referências e repositório</div>
+  <h1>Referências e <em>código-fonte</em></h1>
+  <div class="grid2">
+    <div>
+      <ul style="font-size:20px">
+        <li>CORMEN, T. H. et al. <i>Algoritmos: teoria e prática</i>. 3. ed. Rio de Janeiro: Elsevier, 2012. Caps. 12 e 13.</li>
+        <li>ADELSON-VELSKY, G. M.; LANDIS, E. M. An algorithm for the organization of information. <i>Soviet Mathematics Doklady</i>, v. 3, p. 1259–1263, 1962.</li>
+        <li>GUIBAS, L. J.; SEDGEWICK, R. A dichromatic framework for balanced trees. <i>FOCS</i>, 1978.</li>
+        <li>SZWARCFITER, J. L.; MARKENZON, L. <i>Estruturas de dados e seus algoritmos</i>. 3. ed. Rio de Janeiro: LTC, 2010.</li>
+      </ul>
+    </div>
+    <div class="card" style="align-self:start">
+      <h2>Repositório (público)</h2>
+      <p style="font-size:22px"><a href="https://github.com/leo-lgc/avl-rubro-negra-black-friday" style="color:var(--avl)">github.com/leo-lgc/avl-rubro-negra-black-friday</a></p>
+      <p>Código das duas árvores, menu interativo, testes, benchmark, README com instruções e estes slides.</p>
+      <p class="muted"><code>python3 main.py</code> · Python 3.8+, sem dependências</p>
+    </div>
+  </div>
+  <div class="num">17</div>
+</section>
+
+<script>
+const NS = "http://www.w3.org/2000/svg";
+function el(svg, tag, attrs, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text !== undefined) e.textContent = text;
+  svg.appendChild(e);
+  return e;
+}
+// nodes: {id: [x, y, label, fill, note]}, edges: [[a, b], ...]
+function tree(id, nodes, edges) {
+  const svg = document.getElementById(id);
+  for (const [a, b] of edges) {
+    const [x1, y1] = nodes[a], [x2, y2] = nodes[b];
+    el(svg, "line", {x1, y1, x2, y2, stroke: "#9aa4b1", "stroke-width": 3});
+  }
+  for (const k in nodes) {
+    const [x, y, label, fill, note] = nodes[k];
+    el(svg, "circle", {cx: x, cy: y, r: 30, fill, stroke: fill === "#fff" ? "#0F4C5C" : "none", "stroke-width": 3});
+    el(svg, "text", {x, y: y + 8, "text-anchor": "middle", "font-size": 22, "font-weight": 700,
+                     fill: fill === "#fff" ? "#161d26" : "#fff"}, label);
+    if (note) el(svg, "text", {x: x + 40, y: y - 18, "font-size": 18, fill: note.startsWith("−2") ? "#C8323A" : "#697F81", "font-weight": 600}, note);
+  }
+}
+const W = "#fff", R = "#C8323A", B = "#1A1A1A";
+
+tree("degenerate",
+  {a: [60, 40, "1", W], b: [160, 115, "2", W], c: [260, 190, "3", W], d: [360, 265, "4", W], e: [460, 340, "5", W]},
+  [["a", "b"], ["b", "c"], ["c", "d"], ["d", "e"]]);
+
+tree("avl-before",
+  {a: [80, 50, "10", W, "−2"], b: [180, 160, "20", W, "−1"], c: [280, 270, "30", W, "0"]},
+  [["a", "b"], ["b", "c"]]);
+tree("avl-after",
+  {b: [180, 80, "20", W, "0"], a: [80, 220, "10", W, "0"], c: [280, 220, "30", W, "0"]},
+  [["b", "a"], ["b", "c"]]);
+
+tree("rb-1",
+  {a: [80, 50, "10", B], b: [180, 160, "20", R], c: [280, 270, "30", R]},
+  [["a", "b"], ["b", "c"]]);
+tree("rb-2",
+  {b: [180, 80, "20", B], a: [80, 220, "10", R], c: [280, 220, "30", R]},
+  [["b", "a"], ["b", "c"]]);
+tree("rb-3",
+  {b: [180, 60, "20", B], a: [90, 170, "10", B], c: [270, 170, "30", B], d: [150, 280, "15", R]},
+  [["b", "a"], ["b", "c"], ["a", "d"]]);
+
+// gráfico de barras agrupadas
+function bars(id, groups, max, fmt) {
+  const svg = document.getElementById(id);
+  const left = 70, bottom = 360, top = 30, h = bottom - top, gw = 180;
+  for (let i = 0; i <= 4; i++) {
+    const v = max * i / 4, y = bottom - h * i / 4;
+    el(svg, "line", {x1: left, x2: 620, y1: y, y2: y, stroke: "#e3e7eb"});
+    el(svg, "text", {x: left - 10, y: y + 5, "text-anchor": "end", "font-size": 14, fill: "#5b6573"}, fmt(v));
+  }
+  groups.forEach(([label, a, b], i) => {
+    const x0 = left + 25 + i * gw;
+    [[a, "#0F4C5C"], [b, "#C8323A"]].forEach(([v, c], j) => {
+      const bh = h * v / max, x = x0 + j * 68;
+      el(svg, "rect", {x, y: bottom - bh, width: 60, height: bh, rx: 4, fill: c});
+      el(svg, "text", {x: x + 30, y: bottom - bh - 8, "text-anchor": "middle", "font-size": 16, "font-weight": 700, fill: "#161d26"}, fmt(v));
+    });
+    el(svg, "text", {x: x0 + 64, y: bottom + 28, "text-anchor": "middle", "font-size": 16, fill: "#161d26"}, label);
+  });
+  el(svg, "rect", {x: 380, y: 0, width: 16, height: 16, fill: "#0F4C5C", rx: 3});
+  el(svg, "text", {x: 402, y: 13, "font-size": 15}, "AVL");
+  el(svg, "rect", {x: 450, y: 0, width: 16, height: 16, fill: "#C8323A", rx: 3});
+  el(svg, "text", {x: 472, y: 13, "font-size": 15}, "Rubro-Negra");
+}
+bars("chart-h", [["crescente", 14, 24], ["decrescente", 14, 24], ["aleatória", 16, 16]], 28, v => Math.round(v));
+bars("chart-r", [["crescente", 9991, 9987], ["decrescente", 9991, 9987], ["aleatória", 8938, 7806]], 12000,
+     v => Math.round(v).toLocaleString("pt-BR"));
+</script>
+</body>
+</html>
