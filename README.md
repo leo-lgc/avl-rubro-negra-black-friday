@@ -2,27 +2,22 @@
 
 Oi, professora! Este é o meu projeto para IMD0039 (Estruturas de Dados Básicas II).
 
-A ideia: um sistema de logística em plena Black Friday precisa registrar, localizar e
+A ideia é um sistema de logística em plena Black Friday precisa registrar, localizar e
 remover IDs de encomendas o tempo todo. Como esses IDs costumam chegar em ordem, uma
 árvore de busca comum viraria uma lista enorme. Então implementei as duas árvores
 balanceadas da disciplina, **AVL** e **Rubro-Negra**, e o programa deixa escolher qual
 usar logo ao abrir. Todo o balanceamento (rotações e recolorações) foi escrito à mão,
 sem biblioteca de árvore.
 
-**Autor:** Leonardo Guimarães Castro
-
 ### Sobre o visual dos slides
 
 Os slides usam o template visual da **Tess**, a empresa onde eu trabalho: cores, fonte e
-logo vêm do manual de marca de lá. Usei porque já tinha o material pronto e achei que
-deixava a apresentação mais caprichada. O conteúdo é todo deste trabalho; a Tess não
-tem relação com o projeto.
+logo vêm do manual de marca de lá. Usei porque já tinha o material pronto e a senhora flaou
+que poderia utilizar e que seria legal, então acabei adotando.
 
 ## O que precisa para rodar
 
-- Python 3.8 ou mais novo. Não tem nenhuma dependência externa.
-- Python é interpretado, então não existe versão compilada: os próprios `.py` já são o
-  programa pronto.
+- Python 3.8
 
 ## Como executar
 
