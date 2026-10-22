@@ -25,7 +25,7 @@
   html, body { margin: 0; background: #cfd4d6; color: var(--ink); font-family: Inter, system-ui, sans-serif; }
   .slide {
     width: 1280px; height: 720px; margin: 24px auto; background: var(--bg); color: var(--ink);
-    position: relative; overflow: hidden; padding: 72px 80px 56px;
+    position: relative; overflow: hidden; padding: 92px 80px 52px;
     display: flex; flex-direction: column; break-after: page; page-break-after: always;
     box-shadow: 0 4px 20px rgba(0,0,0,.15);
   }
@@ -45,7 +45,11 @@
     border: 1.5px solid currentColor; opacity: .45; display: flex; align-items: center; justify-content: center; font-size: 20px;
   }
   .slide.last::after { content: "↙"; }
+  .logo { position: absolute; top: 40px; left: 48px; height: 30px; display: block; }
   .num { position: absolute; right: 48px; bottom: 26px; font-size: 14px; color: var(--muted); }
+  .brand { position: absolute; left: 48px; bottom: 26px; font-size: 14px; color: var(--muted); letter-spacing: .02em; }
+  .cursor { color: var(--teal); font-weight: 700; margin-left: 6px; }
+  .dark .cursor, .teal .cursor { color: rgba(255,255,255,.6); }
   .kicker { font-size: 15px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
   .kicker::before { content: "— "; }
   h1 { font-size: 46px; line-height: 1.1; margin: 0 0 28px; font-weight: 800; letter-spacing: -.01em; }
@@ -477,7 +481,7 @@ Ran 20 tests in 0.796s
 </section>
 
 <!-- 17. Referências -->
-<section class="slide last">
+<section class="slide">
   <div class="kicker">10 · Referências e repositório</div>
   <h1>Referências e <em>código-fonte</em></h1>
   <div class="grid2">
@@ -499,7 +503,29 @@ Ran 20 tests in 0.796s
   <div class="num">17</div>
 </section>
 
+<!-- 18. Encerramento -->
+<section class="slide last" style="align-items:center; justify-content:center; text-align:center">
+  <div class="kicker">IMD0039 · Estruturas de Dados Básicas II</div>
+  <h1 style="font-size:84px; font-weight:800; color:var(--teal); margin-bottom:36px">Obrigado.</h1>
+  <div><span class="pill">github.com/leo-lgc/avl-rubro-negra-black-friday</span><span class="cursor">·;</span></div>
+  <p class="muted" style="font-size:18px; margin-top:28px">Leonardo Guimarães Castro</p>
+  <div class="num">18</div>
+</section>
+
 <script>
+// logo e rodapé da Tess em todos os slides
+document.querySelectorAll(".slide").forEach(sl => {
+  const dark = sl.classList.contains("dark") || sl.classList.contains("teal");
+  const img = document.createElement("img");
+  img.className = "logo"; img.alt = "Tess";
+  img.src = dark ? "assets/tess-logo-white.svg" : "assets/tess-logo-black.svg";
+  sl.prepend(img);
+  if (!sl.classList.contains("cover") && !sl.classList.contains("last")) {
+    const b = document.createElement("div");
+    b.className = "brand"; b.textContent = "Trabalhe melhor com a Tess · tess.im";
+    sl.appendChild(b);
+  }
+});
 const NS = "http://www.w3.org/2000/svg";
 function el(svg, tag, attrs, text) {
   const e = document.createElementNS(NS, tag);
