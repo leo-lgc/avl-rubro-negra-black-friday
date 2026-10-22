@@ -1,53 +1,65 @@
 # AVL vs Rubro-Negra: índice de encomendas da Black Friday
 
-Protótipo para IMD0039 (Estruturas de Dados Básicas II). Um sistema de logística
-registra, localiza e remove IDs de encomendas usando uma árvore de busca balanceada,
-escolhida na hora da execução: **AVL** ou **Rubro-Negra**. Todo o balanceamento
-(rotações e recolorações) foi implementado à mão, sem bibliotecas de árvore.
+Oi, professora! Este é o meu projeto para IMD0039 (Estruturas de Dados Básicas II).
+
+A ideia: um sistema de logística em plena Black Friday precisa registrar, localizar e
+remover IDs de encomendas o tempo todo. Como esses IDs costumam chegar em ordem, uma
+árvore de busca comum viraria uma lista enorme. Então implementei as duas árvores
+balanceadas da disciplina, **AVL** e **Rubro-Negra**, e o programa deixa escolher qual
+usar logo ao abrir. Todo o balanceamento (rotações e recolorações) foi escrito à mão,
+sem biblioteca de árvore.
 
 **Autor:** Leonardo Guimarães Castro
 
-## Requisitos
+### Sobre o visual dos slides
 
-- Python 3.8 ou mais recente. Nenhuma dependência externa.
-- Python é interpretado: não há versão compilada. Os arquivos `.py` são o programa
-  pronto para rodar.
+Os slides usam o template visual da **Tess**, a empresa onde eu trabalho: cores, fonte e
+logo vêm do manual de marca de lá. Usei porque já tinha o material pronto e achei que
+deixava a apresentação mais caprichada. O conteúdo é todo deste trabalho; a Tess não
+tem relação com o projeto.
+
+## O que precisa para rodar
+
+- Python 3.8 ou mais novo. Não tem nenhuma dependência externa.
+- Python é interpretado, então não existe versão compilada: os próprios `.py` já são o
+  programa pronto.
 
 ## Como executar
 
 ```bash
-python3 main.py                        # programa interativo
-python3 -m unittest -v test_trees.py   # testes
-python3 benchmark.py                   # comparação AVL x RB com N = 10000
-python3 benchmark.py 100000            # mesmo experimento com outro N
+python3 main.py                        # o programa com menu
+python3 -m unittest -v test_trees.py   # os testes
+python3 benchmark.py                   # a comparação AVL x RB com 10.000 IDs
+python3 benchmark.py 100000            # o mesmo experimento com outro tamanho
 ```
 
-No Windows, use `python` no lugar de `python3`.
+No Windows, troque `python3` por `python`.
 
-## Arquivos
+## O que tem em cada arquivo
 
 | Arquivo | Conteúdo |
 |---|---|
-| `trees.py` | `AVLTree` e `RBTree`, com a mesma interface |
-| `main.py` | menu interativo |
-| `test_trees.py` | testes de funcionamento e de propriedades (os mesmos para as duas árvores) |
-| `benchmark.py` | experimento comparativo: altura, rotações, recolorações e tempo |
-| `apresentacao/` | slides da apresentação (HTML e PDF) |
+| `trees.py` | as duas árvores (`AVLTree` e `RBTree`), com a mesma interface |
+| `main.py` | o menu interativo |
+| `test_trees.py` | os testes, que são os mesmos para as duas árvores |
+| `benchmark.py` | o experimento que compara altura, rotações, recolorações e tempo |
+| `apresentacao/` | os slides (HTML e PDF) |
 
-## Funcionalidades
+## O que o programa faz
 
-Ao iniciar, o usuário escolhe a árvore. O menu oferece:
+Quando abre, ele pergunta qual árvore usar. Depois aparece o menu:
 
-1. Inserir ID
-2. Remover ID
-3. Buscar ID
-4. Percurso em ordem (IDs em ordem crescente)
-5. Visualizar a árvore (na AVL, com o fator de balanceamento de cada nó; na
-   Rubro-Negra, com a cor: `(P)` preto, `(V)` vermelho, também em vermelho no terminal)
+1. Inserir um ID
+2. Remover um ID
+3. Buscar um ID
+4. Percurso em ordem (mostra os IDs do menor para o maior)
+5. Ver a árvore. Na AVL aparece o fator de balanceamento de cada nó; na Rubro-Negra
+   aparece a cor, `(P)` para preto e `(V)` para vermelho (no terminal o vermelho
+   aparece colorido mesmo)
 6. Inserir vários IDs de uma vez
-7. Estatísticas: tamanho, altura, rotações (e recolorações e altura negra na RB)
+7. Estatísticas: tamanho, altura e rotações (na RB também recolorações e altura negra)
 
-## Exemplo de uso
+## Um exemplo rápido
 
 ```
 Escolha a árvore: [1] AVL  [2] Rubro-Negra > 2
@@ -69,46 +81,45 @@ ID a buscar: 99
     └── 5(V)
 ```
 
-A árvore é desenhada de lado: a raiz fica à esquerda, os filhos da direita aparecem
-acima e os da esquerda abaixo.
+A árvore aparece deitada: a raiz fica à esquerda, os filhos da direita ficam em cima e
+os da esquerda embaixo.
 
-## Decisões de projeto
+## Decisões que tomei
 
-- **IDs repetidos:** a inserção é recusada com aviso e a árvore não muda. O ID de
-  uma encomenda é único, então um repetido indica erro de entrada.
-- **Busca ou remoção de ID inexistente:** o sistema informa "não encontrado" e a
-  árvore não muda.
-- **Árvore vazia:** todas as operações funcionam; a visualização mostra `(árvore vazia)`.
-- **Remoção de nó com dois filhos:** o nó é substituído pelo sucessor em ordem
-  (o menor da subárvore direita), nas duas árvores.
-- **Entrada que não é inteiro:** mensagem de erro, e o programa continua.
-- **Contagem de rotações:** uma rotação dupla (casos LR/RL da AVL, caso 2 da RB)
-  conta como duas rotações simples. Na RB, só conta como recoloração quando a cor
-  de um nó muda de fato.
-- **Rubro-Negra:** segue o CLRS (cap. 13), com um nó sentinela `NIL` preto
-  representando todas as folhas.
+- **ID repetido:** o programa recusa e avisa. ID de encomenda é único, então um
+  repetido só pode ser erro de digitação.
+- **Buscar ou remover um ID que não existe:** aparece "não encontrado" e a árvore fica
+  como estava.
+- **Árvore vazia:** tudo funciona normalmente, e a visualização mostra `(árvore vazia)`.
+- **Remover um nó com dois filhos:** ele é trocado pelo sucessor em ordem (o menor da
+  subárvore da direita). Fiz igual nas duas árvores para a comparação ser justa.
+- **Digitar algo que não é número:** aparece um erro e o programa continua rodando.
+- **Como contei as rotações:** uma rotação dupla (LR/RL na AVL) conta como duas. Na RB,
+  só conto recoloração quando a cor do nó muda de verdade.
+- **Rubro-Negra:** segui o Cormen (CLRS, cap. 13), usando um nó sentinela `NIL` preto
+  no lugar de todas as folhas.
 
-## Como funciona
+## Como as árvores funcionam
 
-**AVL.** Cada nó guarda sua altura. Depois de inserir ou remover, o caminho até a
-raiz é refeito, e cada nó tem o fator de balanceamento (altura esquerda menos altura
-direita) verificado. Se ele sair de {-1, 0, 1}, aplica-se uma de quatro correções:
-LL (rotação à direita), RR (rotação à esquerda), LR e RL (rotações duplas).
+**AVL.** Cada nó guarda a própria altura. Depois de inserir ou remover, o programa
+volta pelo caminho até a raiz conferindo o fator de balanceamento (altura da esquerda
+menos altura da direita). Se algum sair de {-1, 0, 1}, entra uma das quatro correções:
+LL (rotação à direita), RR (rotação à esquerda), LR ou RL (rotações duplas).
 
-**Rubro-Negra.** Cada nó é vermelho ou preto. As regras são: a raiz é preta, as
-folhas NIL são pretas, um nó vermelho não tem filho vermelho, e todo caminho de um
-nó até as folhas tem o mesmo número de pretos. O nó novo entra vermelho. Se o pai
-também for vermelho, a correção depende da cor do tio: tio vermelho resolve com
-recoloração, e tio preto resolve com uma ou duas rotações. Na remoção, quando sai
-um nó preto, a correção olha o irmão (4 casos).
+**Rubro-Negra.** Cada nó é vermelho ou preto, e as regras são: a raiz é preta, as
+folhas NIL são pretas, nó vermelho não tem filho vermelho e todo caminho até as folhas
+passa pelo mesmo número de pretos. O nó novo sempre entra vermelho. Se o pai também for
+vermelho, o que resolve é olhar o tio: se o tio for vermelho, basta recolorir; se for
+preto, entram uma ou duas rotações. Na remoção, quando sai um nó preto, a correção olha
+o irmão (são 4 casos).
 
-`check()` confere todas essas propriedades e é chamado pelos testes e pelo benchmark
-depois das operações.
+A função `check()` confere todas essas regras. Os testes e o benchmark chamam ela
+depois das operações, então se alguma propriedade quebrasse eu ia ver na hora.
 
-## Resultados (N = 10.000, `python3 benchmark.py`)
+## Resultados (10.000 IDs, `python3 benchmark.py`)
 
-Mesmos IDs e mesma sequência nas duas árvores; depois de inserir tudo, metade das
-chaves é removida.
+Usei os mesmos IDs e a mesma sequência de operações nas duas árvores. Depois de
+inserir tudo, removi metade das chaves.
 
 | Ordem | Árvore | Altura após inserir | Rotações ao inserir | Recolorações ao inserir | Altura após remover | Rotações no total |
 |---|---|---|---|---|---|---|
@@ -119,5 +130,5 @@ chaves é removida.
 | Aleatória | AVL | 16 | 6.946 | — | 15 | 8.938 |
 | Aleatória | RB | 16 | 5.806 | 23.230 | 15 | 7.806 |
 
-Os tempos em milissegundos variam de máquina para máquina e aparecem na saída do
-`benchmark.py`.
+Os tempos em milissegundos mudam de computador para computador, por isso deixei só na
+saída do `benchmark.py`.
